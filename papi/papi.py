@@ -260,7 +260,7 @@ class PAPI(commands.Cog):
         api_url = settings["api_url"]
         api_key = settings["api_key"]
 
-        clean_placeholder = palceholder.strip("%")
+        clean_placeholder = placeholder.strip("%")
         
         params = {"placeholder": clean_placeholder}
         if player:
@@ -329,5 +329,6 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
