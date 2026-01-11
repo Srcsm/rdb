@@ -179,8 +179,8 @@ class PAPI(commands.Cog):
         
         await ctx.send(embed=embed)
     
-    # Slash command
-    @app_commands.command(name="papi", description="Parse a PlaceholderAPI placeholder")
+    # Slash command - properly integrated with Red
+    @app_commands.command(name="papi")
     @app_commands.describe(
         placeholder="The placeholder to parse (e.g., player_name, server_online)",
         player="Optional: Player name for player-specific placeholders"
@@ -191,7 +191,7 @@ class PAPI(commands.Cog):
         placeholder: str,
         player: Optional[str] = None
     ):
-        """Query PlaceholderAPI placeholders from the Minecraft server"""
+        """Parse a PlaceholderAPI placeholder from your Minecraft server"""
         debug = await self.config.debug()
         
         if debug:
@@ -323,7 +323,7 @@ class PAPI(commands.Cog):
         return embed
 
 
-async def setup(bot: Red):
+async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
