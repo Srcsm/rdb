@@ -12,9 +12,9 @@ log = logging.getLogger("red.papi")
 
 
 class PAPI(commands.Cog):
-    """PlaceholderAPI integration for Red-DiscordBot
+    """PlaceholderAPI integration for Red.
     
-    Query PlaceholderAPI placeholders from your Minecraft server via Discord slash commands.
+    Query placeholders with a Discord slash command.
     """
     
     def __init__(self, bot: Red):
@@ -23,7 +23,7 @@ class PAPI(commands.Cog):
         
         # Default settings
         default_global = {
-            "server_name": "Minecraft Server",
+            "server_name": "MC SMP",
             "footer_icon": "https://i.imgur.com/example.png",
             "debug": False,
             "api_url": "http://localhost:8080",
@@ -54,7 +54,7 @@ class PAPI(commands.Cog):
     
     def format_help_for_context(self, ctx: commands.Context) -> str:
         """Show version in help"""
-        return f"{super().format_help_for_context(ctx)}\n\nVersion: 1.0.0"
+        return f"{super().format_help_for_context(ctx)}\n\nVersion: 1.0.1"
     
     # Config commands
     @commands.group()
@@ -67,7 +67,7 @@ class PAPI(commands.Cog):
     async def set_server_name(self, ctx: commands.Context, *, name: str):
         """Set the server name displayed in embeds
         
-        Example: `[p]papiset servername My Awesome Server`
+        Example: `[p]papiset servername MC SMP`
         """
         await self.config.server_name.set(name)
         await ctx.send(f"✅ Server name set to: **{name}**")
@@ -87,7 +87,7 @@ class PAPI(commands.Cog):
     
     @papiset.command(name="apiurl")
     async def set_api_url(self, ctx: commands.Context, url: str):
-        """Set the REST API URL for your Minecraft server
+        """Set the PAPIRRestAPI URL for your Minecraft server
         
         Example: `[p]papiset apiurl http://your-server.com:8080`
         """
@@ -101,19 +101,21 @@ class PAPI(commands.Cog):
     @papiset.command(name="apikey")
     async def set_api_key(self, ctx: commands.Context, key: str):
         """Set the API key for authentication
+        _Recommended to generate a key with a service_
+        _such as https://uuidgenerator.com/_
         
         Example: `[p]papiset apikey your-secret-key-here`
         
-        **Note:** This message will be deleted for security.
+        **Note:** Your message will be immediately deleted for security, regardless please use within a secure channel.
         """
         await self.config.api_key.set(key)
         await ctx.send("✅ API key has been set securely.")
         
-        # Delete the command message for security
+        # Delete the command message
         try:
             await ctx.message.delete()
         except discord.errors.Forbidden:
-            await ctx.send("⚠️ I don't have permission to delete messages. Please delete your message manually for security.")
+            await ctx.send("⚠️ **WARNING:** _I don't have permission to delete messages._ Please delete your message manually!")
         
         if await self.config.debug():
             log.info(f"API key updated by {ctx.author}")
@@ -129,7 +131,7 @@ class PAPI(commands.Cog):
     
     @papiset.command(name="test")
     async def test_connection(self, ctx: commands.Context):
-        """Test the connection to your Minecraft server's REST API"""
+        """Test the connection to PAPIRestAPI"""
         async with ctx.typing():
             settings = await self.config.all()
             api_url = settings["api_url"]
@@ -153,9 +155,9 @@ class PAPI(commands.Cog):
                         embed.add_field(name="API URL", value=api_url, inline=False)
                         await ctx.send(embed=embed)
                     else:
-                        await ctx.send(f"❌ Connection failed with status code: {resp.status}")
+                        await ctx.send(f"❌ Connection failed! Status code: {resp.status}")
             except aiohttp.ClientError as e:
-                await ctx.send(f"❌ Connection failed: {str(e)}\n\nMake sure your Minecraft server is running and the API URL is correct.")
+                await ctx.send(f"❌ Connection failed: {str(e)}\n\nEnsure your server is running and the API URL is correct.")
             except Exception as e:
                 log.error(f"Error testing connection: {e}", exc_info=True)
                 await ctx.send(f"❌ Unexpected error: {str(e)}")
@@ -166,7 +168,7 @@ class PAPI(commands.Cog):
         settings = await self.config.all()
         
         embed = discord.Embed(
-            title="🔧 PAPI Configuration",
+            title="🔧 PAPI Settings",
             color=await ctx.embed_color(),
             timestamp=datetime.utcnow()
         )
@@ -174,16 +176,16 @@ class PAPI(commands.Cog):
         embed.add_field(name="Server Name", value=settings["server_name"], inline=False)
         embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
         embed.add_field(name="API URL", value=settings["api_url"], inline=False)
-        embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Using default (change this!)", inline=False)
+        embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Defaults detected! _(change this!)_", inline=False)
         embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
         
         await ctx.send(embed=embed)
     
-    # Slash command - properly integrated with Red
+    # Slash command
     @app_commands.command(name="papi")
     @app_commands.describe(
         placeholder="The placeholder to parse (e.g., player_name, server_online)",
-        player="Optional: Player name for player-specific placeholders"
+        player="Optional: For player-specific placeholders"
     )
     async def papi_slash(
         self, 
@@ -191,7 +193,7 @@ class PAPI(commands.Cog):
         placeholder: str,
         player: Optional[str] = None
     ):
-        """Parse a PlaceholderAPI placeholder from your Minecraft server"""
+        """Parse a PlaceholderAPI placeholder from Minecraft"""
         debug = await self.config.debug()
         
         if debug:
@@ -205,7 +207,7 @@ class PAPI(commands.Cog):
             # Check if API is configured
             if settings["api_key"] == "change-me-please":
                 await interaction.followup.send(
-                    "❌ **Error:** API key not configured. Please ask a bot owner to set it up.",
+                    "❌ **Error:** API key not configured. Please contact the bot owner.",
                     ephemeral=True
                 )
                 return
@@ -215,8 +217,8 @@ class PAPI(commands.Cog):
             
             if result is None:
                 await interaction.followup.send(
-                    f"❌ **Error:** Failed to connect to the Minecraft server. Please try again later.",
-                    ephemeral=False
+                    f"❌ **Error:** Failed to connect to PAPIRestAPI or your Minecraft server. Please try again later.",
+                    ephemeral=True
                 )
                 return
             
@@ -224,7 +226,7 @@ class PAPI(commands.Cog):
                 error_msg = result.get("error", "Unknown error")
                 await interaction.followup.send(
                     f"❌ **Error:** {error_msg}",
-                    ephemeral=False
+                    ephemeral=True
                 )
                 return
             
@@ -244,7 +246,7 @@ class PAPI(commands.Cog):
             log.error(f"Error in PAPI command: {e}", exc_info=True)
             await interaction.followup.send(
                 "❌ **Error:** An unexpected error occurred while processing the command.",
-                ephemeral=False
+                ephemeral=True
             )
     
     async def _parse_placeholder_via_api(
@@ -303,7 +305,7 @@ class PAPI(commands.Cog):
         
         embed = discord.Embed(
             title="PlaceholderAPI Result",
-            color=discord.Color.blue(),
+            color=discord.Colour.green(),
             timestamp=datetime.utcnow()
         )
         
@@ -316,9 +318,8 @@ class PAPI(commands.Cog):
             thumbnail_url = f"https://vzge.me/bust/128/{context}"
             embed.set_thumbnail(url=thumbnail_url)
         
-        # Set footer
-        timestamp_str = datetime.now().strftime("%d/%m/%Y %I:%M%p")
-        embed.set_footer(text=timestamp_str, icon_url=settings["footer_icon"])
+        # timestamp_str = datetime.now().strftime("%d/%m/%Y %I:%M%p")
+        embed.set_footer(text=settings["server_name"], icon_url=settings["footer_icon"])
         
         return embed
 
@@ -327,3 +328,4 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
