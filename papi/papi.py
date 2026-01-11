@@ -313,15 +313,9 @@ class PAPI(commands.Cog):
         # embed.add_field(name="🏷️ **Placeholder**", value=f"`{placeholder}`", inline=True)
         # embed.add_field(name="👤 **Context**", value=context, inline=True)
         # embed.add_field(name="#️⃣ **Value**", value=value, inline=False)
-        embed.add_field(name="Result", value=f"""```ansi
-        \u001b[0;32m{value}\u001b[0;30m
-        ```""", inline=True)
-        embed.add_field(name="Context", value=f"""```ansi
-        \u001b[0;34m{context}\u001b[0;30m
-        ```""", inline=True)
-        embed.add_field(name="Placeholder", value=f"""```ansi
-        \u001b[0;30m{placeholder}\u001b[0;30m
-        ```""", inline=False)
+        embed.add_field(name="Result", value=f"""```ansi\n\u001b[0;32m{value}\u001b[0;30m\n```""", inline=True)
+        embed.add_field(name="Context", value=f"""```ansi\n\u001b[0;34m{context}\u001b[0;30m\n```""", inline=True)
+        embed.add_field(name="Placeholder", value=f"""```ansi\n\u001b[0;30m{placeholder}\u001b[0;30m\n```""", inline=False)
         
         # Add player thumbnail if it's a player-specific query
         if context != "Server":
@@ -338,6 +332,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
