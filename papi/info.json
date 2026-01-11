@@ -1,0 +1,16 @@
+{
+    "author": ["srcsm"],
+    "description": "PlaceholderAPI integration for Red. Use slash commands to query placeholder data.",
+    "install_msg": "Thank you for installing PAPI!\n\n**Setup Instructions:**\n1. Use `[p]papiset servername <name>` to set your server name\n2. Use `[p]papiset footericon <url>` to set the footer icon\n3. Install accompanying plugin on your server, configure and restart.\n4. Enable slash commands with `[p]slash sync`\n\n**Note:** This cog requires integration with your Minecraft server through an accompanying plugin, otherwise it will not work! ",
+    "short": "Use slash commands to query Minecraft PAPI placeholders.",
+    "min_bot_version": "3.5.0",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG",
+    "tags": [
+        "minecraft",
+        "slash commands"
+    ],
+    "requirements": ["discord", "logging", "aiohttp"],
+    "end_user_data_statement": "This cog stores server configuration data (server name, footer icon URL, and debug settings). It does not store any personal user data."
+}
