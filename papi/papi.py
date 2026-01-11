@@ -259,9 +259,10 @@ class PAPI(commands.Cog):
         debug = settings["debug"]
         api_url = settings["api_url"]
         api_key = settings["api_key"]
+
+        clean_placeholder = palceholder.strip("%")
         
-        # Build query parameters
-        params = {"placeholder": placeholder}
+        params = {"placeholder": clean_placeholder}
         if player:
             params["player"] = player
         
@@ -328,4 +329,5 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
