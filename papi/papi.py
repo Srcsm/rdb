@@ -48,7 +48,7 @@ class PAPI(commands.Cog):
             "watch_delete_trigger": False
         }
 
-        self.watch_cooldowns = defaultdict(datetime.min)
+        self.watch_cooldowns = defaultdict(default_time())
         
         self.config.register_global(**default_global)
         self.session: Optional[aiohttp.ClientSession] = None
@@ -1111,5 +1111,6 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
