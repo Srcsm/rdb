@@ -47,6 +47,8 @@ class PAPI(commands.Cog):
             "watch_delete_trigger": False
         }
 
+        def default_time():
+            return datetime.min
         self.watch_cooldowns = defaultdict(datetime.min)
         
         self.config.register_global(**default_global)
@@ -114,12 +116,12 @@ class PAPI(commands.Cog):
             log.info(f"Context title updated by {ctx.author} to: {name}")
 
     @papiset.command(name="placeholdertitle", aliases=["pt"])
-    async def set_value_title(self, ctx: commands.Context, *, name: str):
+    async def set_placeholder_title(self, ctx: commands.Context, *, name: str):
         """Set the title for the placeholder field in embeds
         
         Example: `[p]papiset placeholdertitle Placeholder`
         """
-        await self.config.embed_value_title.set(name)
+        await self.config.embed_placeholder_title.set(name)
         await self.temp_message(
             ctx,
             f"✅ Placeholder title set to: **{name}**",
@@ -470,7 +472,7 @@ class PAPI(commands.Cog):
     async def watch_cooldown(self, ctx: commands.Context, seconds: int):
         """Set cooldown between watch parses per user (0 to disable)"""
         if seconds < 0:
-            await jself.temp_message(ctx, "❌ Cooldown must be 0 or greater", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "❌ Cooldown must be 0 or greater", delete_after=3, delete_command_delay=1)
             return
         
         await self.config.watch_cooldown.set(seconds)
@@ -632,7 +634,7 @@ class PAPI(commands.Cog):
             await interaction.followup.send(embed=embed)
             
             if debug:
-                log.info(f"Successfully sent PAPI response for {placeholder}:{value}")
+                log.info(f"Successfully sent PAPI response for {placeholder}:{result['value']}")
                 
         except Exception as e:
             log.error(f"Error in PAPI command: {e}", exc_info=True)
@@ -1073,11 +1075,3 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
-
-
-
-
-
-
-
-
