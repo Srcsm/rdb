@@ -11,7 +11,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = "1.1.0"
+ver = "1.1.2"
 log = logging.getLogger("red.papi")
 PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
@@ -48,8 +48,6 @@ class PAPI(commands.Cog):
             "watch_delete_trigger": False
         }
 
-        def default_time():
-            return datetime.min
         self.watch_cooldowns = defaultdict(datetime.min)
         
         self.config.register_global(**default_global)
@@ -77,6 +75,9 @@ class PAPI(commands.Cog):
     def format_help_for_context(self, ctx: commands.Context) -> str:
         """Show version in help"""
         return f"{super().format_help_for_context(ctx)}\n\nVersion: {ver}"
+
+    def default_time():
+            return datetime.min
     
     @commands.group()
     @commands.is_owner()
@@ -891,7 +892,19 @@ class PAPI(commands.Cog):
         if not self._extract_placeholders(message.content):
             return
 
-        unique_placeholders = list(dict.fromkeys(matches))
+        unique_placeholders = self._dedupe_placeholders(matches)
+        # unique_placeholders = list(dict.fromkeys(matches))
+        
+        # Enforce max placeholder early
+        max_ph = settings["watch_max_placeholders"]
+        if max_ph > 0 and len(unique_placeholders) > max_ph:
+            if settings["watch_show_errors"]:
+                await message.reply(
+                    f"❌ Too many placeholders ({len(unique_placeholders)}/{max_ph})",
+                    mention_author=False
+                )
+            return
+
         
         if debug:
             log.info(f"Processing watch message from {message.author} in #{message.channel.name}")
@@ -1098,4 +1111,5 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
