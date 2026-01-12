@@ -15,6 +15,8 @@ ver = "1.1.2"
 log = logging.getLogger("red.papi")
 PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
+def default_time():
+    return datetime.min
 
 class PAPI(commands.Cog):
     """PlaceholderAPI integration for Red.
@@ -75,9 +77,6 @@ class PAPI(commands.Cog):
     def format_help_for_context(self, ctx: commands.Context) -> str:
         """Show version in help"""
         return f"{super().format_help_for_context(ctx)}\n\nVersion: {ver}"
-
-    def default_time():
-            return datetime.min
     
     @commands.group()
     @commands.is_owner()
@@ -1111,6 +1110,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
