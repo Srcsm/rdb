@@ -81,8 +81,14 @@ class PAPI(commands.Cog):
     @commands.group()
     @commands.is_owner()
     async def papiset(self, ctx: commands.Context):
-        """Configure PAPI integration settings"""
+        """Show and configure PAPI settings"""
         pass
+
+    @papiset.group(name="config")
+    async def papiset_config(self, ctx: commands.Context):
+        """Configure PAPI settings"""
+        pass
+
 
     @papiset.command(name="valuetitle", aliases=["vt"])
     async def set_value_title(self, ctx: commands.Context, *, name: str):
@@ -209,7 +215,7 @@ class PAPI(commands.Cog):
         if await self.config.debug():
             log.info(f"API key updated by {ctx.author}")
 
-    @papiset.command(name="allowedroles", aliases=["ar"])
+    @papiset_config.command(name="allowedroles", aliases=["ar"])
     async def set_allowed_roles(self, ctx: commands.Context, *, roles: str = ""):
         """Set the allowed role(s) to use the [p]papi command
 
@@ -233,7 +239,7 @@ class PAPI(commands.Cog):
         if await self.config.debug():
             log.info(f"Allowed roles updated by {ctx.author} to: {roles}")
     
-    @papiset.command(name="debug")
+    @papiset_config.command(name="debug")
     async def toggle_debug(self, ctx: commands.Context):
         """Toggle debug logging"""
         current = await self.config.debug()
@@ -469,7 +475,7 @@ class PAPI(commands.Cog):
             keep_message=True
         )
     
-    @watch_config.command(name="cooldown")
+    @watch_config.command(name="cooldown", aliases=["cd"])
     async def watch_cooldown(self, ctx: commands.Context, seconds: int):
         """Set cooldown between watch parses per user (0 to disable)"""
         if seconds < 0:
@@ -506,21 +512,21 @@ class PAPI(commands.Cog):
         await self.config.watch_reply_type.set(reply_type)
         await self.temp_message(ctx, f"✅ Reply type set to: `{reply_type}`", delete_after=3, delete_command_delay=1)
     
-    @watch_config.command(name="showerrors")
+    @watch_config.command(name="showerrors", aliases=["errors"])
     async def watch_show_errors(self, ctx: commands.Context, enabled: bool):
         """Toggle showing errors in parsed messages (true/false)"""
         await self.config.watch_show_errors.set(enabled)
         status = "enabled" if enabled else "disabled"
         await self.temp_message(ctx, f"✅ Error display {status}", delete_after=3, delete_command_delay=1)
     
-    @watch_config.command(name="requireroles")
+    @watch_config.command(name="requireroles", aliases=["require"])
     async def watch_require_roles(self, ctx: commands.Context, enabled: bool):
         """Toggle requiring allowed_roles for watch mode (true/false)"""
         await self.config.watch_require_roles.set(enabled)
         status = "enabled" if enabled else "disabled"
         await self.temp_message(ctx, f"✅ Role requirement: {status}", delete_after=3, delete_command_delay=1)
     
-    @watch_config.command(name="deletetrigger")
+    @watch_config.command(name="deletetrigger", aliases=["dt"])
     async def watch_delete_trigger(self, ctx: commands.Context, enabled: bool):
         """Toggle deleting original message after parsing (true/false)"""
         await self.config.watch_delete_trigger.set(enabled)
@@ -1126,6 +1132,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
