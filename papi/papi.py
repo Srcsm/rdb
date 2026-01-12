@@ -11,7 +11,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = "1.1.3"
+ver = "1.1.4"
 log = logging.getLogger("red.papi")
 PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
@@ -1012,6 +1012,7 @@ class PAPI(commands.Cog):
         Parse all placeholders in a message.
         Returns dict with 'parsed_content', 'success_count', 'error_count', 'errors'
         """
+        matches = PLACEHOLDER_REGEX.findall(message_content)
         placeholders = self._dedupe_placeholders(matches)
         # placeholders = self._extract_placeholders(message_content)
         
@@ -1111,6 +1112,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
