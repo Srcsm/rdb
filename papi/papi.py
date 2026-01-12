@@ -13,6 +13,7 @@ from redbot.core.utils.chat_formatting import box
 
 ver = "1.1.0"
 log = logging.getLogger("red.papi")
+PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
 
 class PAPI(commands.Cog):
@@ -320,7 +321,7 @@ class PAPI(commands.Cog):
             delete_after=10,
             keep_message=True
         )
-
+    
     @papiset.group(name="watch")
     async def watch_config(self, ctx: commands.Context):
         """Configure the placeholder watch feature"""
@@ -842,6 +843,23 @@ class PAPI(commands.Cog):
         
         return embed
 
+    def _dedupe_placeholders(self, placeholders: list[str]) -> list[str]:
+        """
+        Deduplicate placeholders case-insensitively while preserving original casing.
+        Example:
+            ["Server:Online", "server:online"] → ["Server:Online"]
+        """
+        seen = set()
+        unique = []
+    
+        for ph in placeholders:
+            key = ph.lower()
+            if key not in seen:
+                seen.add(key)
+                unique.append(ph)
+    
+        return unique
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listen for messages with placeholders and parse them"""
@@ -865,10 +883,15 @@ class PAPI(commands.Cog):
             if debug and reason != "Watch mode disabled":
                 log.debug(f"Skipping watch for message from {message.author}: {reason}")
             return
-        
+
+        matches = PLACEHOLDER_REGEX.findall(message.content)
+        if not matches:
+            return
         # Check if message contains placeholders
         if not self._extract_placeholders(message.content):
             return
+
+        unique_placeholders = list(dict.fromkeys(matches))
         
         if debug:
             log.info(f"Processing watch message from {message.author} in #{message.channel.name}")
@@ -946,8 +969,8 @@ class PAPI(commands.Cog):
         Returns list of tuples: [(context, placeholder, full_match), ...]
         """
         # Regex pattern: <context:placeholder>
-        pattern = r'<([^:>]+):([^>]+)>'
-        matches = re.finditer(pattern, content)
+        # pattern = r'<([^:>]+):([^>]+)>'
+        matches = re.finditer(PLACEHOLDER_REGEX, content)
         
         placeholders = []
         for match in matches:
@@ -1075,3 +1098,4 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
