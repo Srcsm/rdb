@@ -1034,8 +1034,22 @@ class PAPI(commands.Cog):
         error_count = 0
         errors = []
         
-        for context, placeholder, full_match in placeholders:
-            player = None if context.lower() == "server" else context
+        # for context, placeholder, full_match in placeholders:
+        for ph in placeholders:
+            full_match = f"<{ph}>"
+        
+            # Split context and placeholder if needed
+            if ":" in ph:
+                context, placeholder = ph.split(":", 1)
+            else:
+                context = None
+                placeholder = ph
+
+            # player = None if context.lower() == "server" else context
+            if context and context.lower() == "server":
+                player = None
+            else:
+                player = context
             
             result = await self._parse_placeholder_via_api(placeholder, player, settings)
             
@@ -1112,6 +1126,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
