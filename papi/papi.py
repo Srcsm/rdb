@@ -9,7 +9,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = 1.0.5
+ver = "1.0.5"
 log = logging.getLogger("red.papi")
 
 
@@ -579,6 +579,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
