@@ -973,25 +973,25 @@ class PAPI(commands.Cog):
             except:
                 pass
 
-    def _extract_placeholders(self, content: str) -> list:
-        """
-        Extract placeholders from message content
-        Format: <context:placeholder>
+    # def _extract_placeholders(self, content: str) -> list:
+    #     """
+    #     Extract placeholders from message content
+    #     Format: <context:placeholder>
         
-        Returns list of tuples: [(context, placeholder, full_match), ...]
-        """
-        # Regex pattern: <context:placeholder>
-        # pattern = r'<([^:>]+):([^>]+)>'
-        matches = re.finditer(PLACEHOLDER_REGEX, content)
+    #     Returns list of tuples: [(context, placeholder, full_match), ...]
+    #     """
+    #     # Regex pattern: <context:placeholder>
+    #     # pattern = r'<([^:>]+):([^>]+)>'
+    #     matches = re.finditer(PLACEHOLDER_REGEX, content)
         
-        placeholders = []
-        for match in matches:
-            context = match.group(1).strip()
-            placeholder = match.group(2).strip()
-            full_match = match.group(0)
-            placeholders.append((context, placeholder, full_match))
+    #     placeholders = []
+    #     for match in matches:
+    #         context = match.group(1).strip()
+    #         placeholder = match.group(2).strip()
+    #         full_match = match.group(0)
+    #         placeholders.append((context, placeholder, full_match))
         
-        return placeholders
+    #     return placeholders
     
     async def _check_watch_cooldown(self, user_id: int, cooldown: int) -> bool:
         """Check if user is on cooldown. Boolean result."""
@@ -1012,7 +1012,8 @@ class PAPI(commands.Cog):
         Parse all placeholders in a message.
         Returns dict with 'parsed_content', 'success_count', 'error_count', 'errors'
         """
-        placeholders = self._extract_placeholders(message_content)
+        placeholders = self._dedupe_placeholders(matches)
+        # placeholders = self._extract_placeholders(message_content)
         
         max_placeholders = settings["watch_max_placeholders"]
         if max_placeholders > 0 and len(placeholders) > max_placeholders:
@@ -1110,6 +1111,7 @@ async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
+
 
 
 
