@@ -3,6 +3,7 @@ import logging
 import aiohttp
 import asyncio
 import re
+import io
 import json
 from typing import Optional
 from collections import defaultdict
