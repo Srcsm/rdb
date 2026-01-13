@@ -11,7 +11,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = "1.1.4"
+ver = "1.1.6"
 log = logging.getLogger("red.papi")
 PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
@@ -49,7 +49,7 @@ class PAPI(commands.Cog):
             "watch_require_roles": False,
             "watch_delete_trigger": False
         }
-
+    
         self.watch_cooldowns = defaultdict(default_time)
         
         self.config.register_global(**default_global)
@@ -83,142 +83,40 @@ class PAPI(commands.Cog):
     async def papiset(self, ctx: commands.Context):
         """Show and configure PAPI settings"""
         pass
-
+    
+    @papiset.command(name="settings", aliases=["info"])
+        async def show_settings(self, ctx: commands.Context):
+            """Show current PAPI settings"""
+            settings = await self.config.all()
+            
+            embed = discord.Embed(
+                title="🔧 PAPI Settings",
+                color=await ctx.embed_color(),
+                timestamp=datetime.utcnow()
+            )
+            
+            embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
+            embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
+            embed.add_field(name="API URL", value=settings["api_url"], inline=False)
+            embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Defaults detected! _(change this!)_", inline=False)
+            embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
+            
+            await self.temp_message(
+                ctx,
+                embed=embed,
+                delete_after=10,
+                keep_message=True
+            )
+    
     @papiset.group(name="config")
     async def papiset_config(self, ctx: commands.Context):
         """Configure PAPI settings"""
         pass
-
-
-    @papiset.command(name="valuetitle", aliases=["vt"])
-    async def set_value_title(self, ctx: commands.Context, *, name: str):
-        """Set the title for the value field in embeds
-        
-        Example: `[p]papiset valuetitle Result`
-        """
-        await self.config.embed_value_title.set(name)
-        await self.temp_message(
-            ctx,
-            f"✅ Value title set to: **{name}**",
-            delete_after=3,
-            delete_command_delay=3
-        )
-        if await self.config.debug():
-            log.info(f"Value title updated by {ctx.author} to: {name}")
-
-    @papiset.command(name="contexttitle", aliases=["ct"])
-    async def set_context_title(self, ctx: commands.Context, *, name: str):
-        """Set the title for the context field in embeds
-        
-        Example: `[p]papiset contexttitle Context`
-        """
-        await self.config.embed_context_title.set(name)
-        await self.temp_message(
-            ctx,
-            f"✅ Context title set to: **{name}**",
-            delete_after=3,
-            delete_command_delay=3
-        )
-        if await self.config.debug():
-            log.info(f"Context title updated by {ctx.author} to: {name}")
-
-    @papiset.command(name="placeholdertitle", aliases=["pt"])
-    async def set_placeholder_title(self, ctx: commands.Context, *, name: str):
-        """Set the title for the placeholder field in embeds
-        
-        Example: `[p]papiset placeholdertitle Placeholder`
-        """
-        await self.config.embed_placeholder_title.set(name)
-        await self.temp_message(
-            ctx,
-            f"✅ Placeholder title set to: **{name}**",
-            delete_after=3,
-            delete_command_delay=3
-        )
-        if await self.config.debug():
-            log.info(f"Placeholder title updated by {ctx.author} to: {name}")
-            
-    @papiset.command(name="footername", aliases=["fn"])
-    async def set_footer_name(self, ctx: commands.Context, *, name: str):
-        """Set the footer name displayed in embeds
-        
-        Example: `[p]papiset footername MC SMP`
-        """
-        await self.config.footer_name.set(name)
-        await self.temp_message(
-            ctx,
-            f"✅ Footer name set to: **{name}**",
-            delete_after=3,
-            delete_command_delay=3
-        )
-        if await self.config.debug():
-            log.info(f"Footer name updated by {ctx.author} to: {name}")
     
-    @papiset.command(name="footericon", aliases=["fi"])
-    async def set_footer_icon(self, ctx: commands.Context, url: str):
-        """Set the footer icon URL for embeds
-        
-        Example: `[p]papiset footericon https://i.imgur.com/example.png`
-        """
-        await self.config.footer_icon.set(url)
-        await self.temp_message(
-            ctx,
-            f"✅ Footer icon URL set to: {url}",
-            delete_after=3,
-            delete_command_delay=3
-        )
-        if await self.config.debug():
-            log.info(f"Footer icon updated by {ctx.author} to: {url}")
-    
-    @papiset.command(name="apiurl")
-    async def set_api_url(self, ctx: commands.Context, url: str):
-        """Set the PAPIRRestAPI URL for your Minecraft server
-        
-        Example: `[p]papiset apiurl http://your-server.com:8080`
-        """
-        # Remove trailing slash if present
-        url = url.rstrip('/')
-        await self.config.api_url.set(url)
-        await self.temp_message(
-            ctx,
-            f"✅ API URL set to: {url}"
-        )
-        if await self.config.debug():
-            log.info(f"API URL updated by {ctx.author} to: {url}")
-    
-    @papiset.command(name="apikey")
-    async def set_api_key(self, ctx: commands.Context, key: str):
-        """Set the API key for authentication
-        _Recommended to generate a key with a service_
-        _such as https://uuidgenerator.com/_
-        
-        Example: `[p]papiset apikey your-secret-key-here`
-        
-        **Note:** Your message will be immediately deleted for security, regardless please use within a secure channel.
-        """
-        await self.config.api_key.set(key)
-        try:
-            await ctx.message.delete()
-            await self.temp_message(
-                ctx,
-                "✅ API key has been set securely.",
-                delete_after=3,
-                delete_command=False
-            )
-        except discord.errors.Forbidden:
-            await self.temp_message(
-                ctx,
-                "⚠️ **WARNING:** _I don't have permission to delete messages._ Please delete your message manually!",
-                delete_command=False
-            )
-        
-        if await self.config.debug():
-            log.info(f"API key updated by {ctx.author}")
-
     @papiset_config.command(name="allowedroles", aliases=["ar"])
     async def set_allowed_roles(self, ctx: commands.Context, *, roles: str = ""):
         """Set the allowed role(s) to use the [p]papi command
-
+    
         Examples: [p]papiset allowedroles Admin
                   [p]papiset ar Admin, Owner, 8096845738
         To reset or allow all users, use without any roles listed
@@ -252,7 +150,144 @@ class PAPI(commands.Cog):
         )
         log.info(f"Debug mode {status} by {ctx.author}")
     
-    @papiset.command(name="test")
+    @papiset_config.group(name="embed")
+    async def papiset_config_embed(self, ctx: commands.Context):
+        """Configure various embed settings"""
+        pass
+    
+    @papiset_config_embed.command(name="contexttitle", aliases=["ct"])
+    async def set_context_title(self, ctx: commands.Context, *, name: str):
+        """Set the title for the context field in embeds
+        
+        Example: `[p]papiset contexttitle Context`
+        """
+        await self.config.embed_context_title.set(name)
+        await self.temp_message(
+            ctx,
+            f"✅ Context title set to: **{name}**",
+            delete_after=3,
+            delete_command_delay=3
+        )
+        if await self.config.debug():
+            log.info(f"Context title updated by {ctx.author} to: {name}")
+    
+    @papiset_config_embed.command(name="footername", aliases=["fn"])
+    async def set_footer_name(self, ctx: commands.Context, *, name: str):
+        """Set the footer name displayed in embeds
+        
+        Example: `[p]papiset footername MC SMP`
+        """
+        await self.config.footer_name.set(name)
+        await self.temp_message(
+            ctx,
+            f"✅ Footer name set to: **{name}**",
+            delete_after=3,
+            delete_command_delay=3
+        )
+        if await self.config.debug():
+            log.info(f"Footer name updated by {ctx.author} to: {name}")
+    
+    @papiset_config_embed.command(name="footericon", aliases=["fi"])
+    async def set_footer_icon(self, ctx: commands.Context, url: str):
+        """Set the footer icon URL for embeds
+        
+        Example: `[p]papiset footericon https://i.imgur.com/example.png`
+        """
+        await self.config.footer_icon.set(url)
+        await self.temp_message(
+            ctx,
+            f"✅ Footer icon URL set to: {url}",
+            delete_after=3,
+            delete_command_delay=3
+        )
+        if await self.config.debug():
+            log.info(f"Footer icon updated by {ctx.author} to: {url}")
+    
+    @papiset_config_embed.command(name="placeholdertitle", aliases=["pt"])
+    async def set_placeholder_title(self, ctx: commands.Context, *, name: str):
+        """Set the title for the placeholder field in embeds
+        
+        Example: `[p]papiset placeholdertitle Placeholder`
+        """
+        await self.config.embed_placeholder_title.set(name)
+        await self.temp_message(
+            ctx,
+            f"✅ Placeholder title set to: **{name}**",
+            delete_after=3,
+            delete_command_delay=3
+        )
+        if await self.config.debug():
+            log.info(f"Placeholder title updated by {ctx.author} to: {name}")
+    
+    @papiset_config_embed.command(name="valuetitle", aliases=["vt"])
+    async def set_value_title(self, ctx: commands.Context, *, name: str):
+        """Set the title for the value field in embeds
+        
+        Example: `[p]papiset valuetitle Result`
+        """
+        await self.config.embed_value_title.set(name)
+        await self.temp_message(
+            ctx,
+            f"✅ Value title set to: **{name}**",
+            delete_after=3,
+            delete_command_delay=3
+        )
+        if await self.config.debug():
+            log.info(f"Value title updated by {ctx.author} to: {name}")
+    
+    @papiset_config.group(name="api")
+    async def papiset_config_api(self, ctx: commands.Context):
+        """Configure API connection settings"""
+        pass
+    
+    @papiset_config_api.command(name="apikey")
+    async def set_api_key(self, ctx: commands.Context, key: str):
+        """Set the API key for authentication
+        _Recommended to generate a key with a service_
+        _such as https://uuidgenerator.com/_
+        
+        Example: `[p]papiset apikey your-secret-key-here`
+        
+        **Note:** Your message will be immediately deleted for security, regardless please use within a secure channel.
+        """
+        await self.config.api_key.set(key)
+        try:
+            await ctx.message.delete()
+            await self.temp_message(
+                ctx,
+                "✅ API key has been set securely.",
+                delete_after=3,
+                delete_command=False
+            )
+        except discord.errors.Forbidden:
+            await self.temp_message(
+                ctx,
+                "⚠️ **WARNING:** _I don't have permission to delete messages._ Please delete your message manually!",
+                delete_command=False
+            )
+        
+        if await self.config.debug():
+            log.info(f"API key updated by {ctx.author}")
+    
+    @papiset_config_api.command(name="apiurl")
+    async def set_api_url(self, ctx: commands.Context, url: str):
+        """Set the PAPIRRestAPI URL for your Minecraft server
+        
+        Example: `[p]papiset apiurl http://your-server.com:8080`
+        """
+        # Remove trailing slash if present
+        url = url.rstrip('/')
+        await self.config.api_url.set(url)
+        await self.temp_message(
+            ctx,
+            f"✅ API URL set to: {url}"
+        )
+        if await self.config.debug():
+            log.info(f"API URL updated by {ctx.author} to: {url}")
+    
+    
+    
+    @papiset_config_api.command(name="test")
     async def test_connection(self, ctx: commands.Context):
         """Test the connection to PAPIRestAPI"""
         async with ctx.typing():
@@ -304,29 +339,7 @@ class PAPI(commands.Cog):
                     delete_command=True
                 )
     
-    @papiset.command(name="settings", aliases=["info"])
-    async def show_settings(self, ctx: commands.Context):
-        """Show current PAPI settings"""
-        settings = await self.config.all()
-        
-        embed = discord.Embed(
-            title="🔧 PAPI Settings",
-            color=await ctx.embed_color(),
-            timestamp=datetime.utcnow()
-        )
-        
-        embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
-        embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
-        embed.add_field(name="API URL", value=settings["api_url"], inline=False)
-        embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Defaults detected! _(change this!)_", inline=False)
-        embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
-        
-        await self.temp_message(
-            ctx,
-            embed=embed,
-            delete_after=10,
-            keep_message=True
-        )
+    
     
     @papiset.group(name="watch")
     async def watch_config(self, ctx: commands.Context):
