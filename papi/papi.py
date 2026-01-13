@@ -158,18 +158,22 @@ class PAPI(commands.Cog):
         """Export settings, excluding senitive fields."""
         settings = await self.config.all()
         
+        # Don't export sensitive fields
         settings.pop("api_key", None)
+        settings.pop("api_url", None)
         
         import json
         data = json.dumps(settings, indent=4)
         
         await ctx.send(
-            "📦 **PAPI configuration export**",
+            "📦 **PAPI settings file exported.**\nSensitive fields have been excluded and cannot be imported.",
             file=discord.File(
                 fp=io.BytesIO(data.encode("utf-8")),
-                filename="papi_config.json"
+                filename="papi_settings.json"
             )
         )
+        
+        asyncio.create_task(self._delete_command_message(ctx, delay=0))
     
     @papiset_config.command(name="import")
     async def config_import(self, ctx: commands.Context, file: discord.Attachment):
@@ -179,8 +183,9 @@ class PAPI(commands.Cog):
             
         data = json.loads(await file.read())
         
-        # Don't allow import of sensitive fields
+        # Don't allow the import of sensitive fields
         data.pop("api_key", None)
+        data.pop("api_url", None)
         
         await self.config.set(data)
         
