@@ -3,6 +3,7 @@ import logging
 import aiohttp
 import asyncio
 import re
+import json
 from typing import Optional
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -11,7 +12,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = "1.1.6"
+ver = "1.1.8"
 log = logging.getLogger("red.papi")
 PLACEHOLDER_REGEX = re.compile(r"<([a-zA-Z0-9_:-]+)>")
 
@@ -41,6 +42,7 @@ class PAPI(commands.Cog):
             "allowed_roles": "",
             "watch_enabled": False,
             "watch_mode": "disabled",  # 'disabled', 'channels', or 'global'
+            "watch_strict_mode": False,
             "watch_channels": [],
             "watch_cooldown": 5,
             "watch_max_placeholders": 10,
@@ -81,12 +83,12 @@ class PAPI(commands.Cog):
     @commands.group()
     @commands.is_owner()
     async def papiset(self, ctx: commands.Context):
-        """Show and configure PAPI settings"""
+        """Base PAPI cog command"""
         pass
     
     @papiset.command(name="settings", aliases=["info"])
     async def show_settings(self, ctx: commands.Context):
-        """Show current PAPI settings"""
+        """Show current PAPI cog settings"""
         settings = await self.config.all()
         
         embed = discord.Embed(
@@ -104,13 +106,13 @@ class PAPI(commands.Cog):
         await self.temp_message(
             ctx,
             embed=embed,
-            delete_after=10,
+            delete_after=15,
             keep_message=True
         )
     
     @papiset.group(name="config")
     async def papiset_config(self, ctx: commands.Context):
-        """Configure PAPI settings"""
+        """Commands to configure PAPI settings"""
         pass
     
     @papiset_config.command(name="allowedroles", aliases=["ar"])
@@ -126,7 +128,7 @@ class PAPI(commands.Cog):
         if roles:
             message = f"✅ Allowed roles set to: **{roles}**"
         else:
-            message = "✅ Role restrictions cleared - everyone can use /papi"
+            message = "✅ Role restrictions cleared - everyone can use [p]papi"
         await self.temp_message(
             ctx,
             message,
@@ -149,6 +151,39 @@ class PAPI(commands.Cog):
             delete_after=3
         )
         log.info(f"Debug mode {status} by {ctx.author}")
+    
+    @papiset_config.command(name="export")
+    async def config_export(self, ctx: commands.Context):
+        """Export settings, excluding senitive fields."""
+        settings = await self.config.all()
+        
+        settings.pop("api_key", None)
+        
+        import json
+        data = json.dumps(settings, indent=4)
+        
+        await ctx.send(
+            "📦 **PAPI configuration export**",
+            file=discord.File(
+                fp=io.BytesIO(data.encode("utf-8")),
+                filename="papi_config.json"
+            )
+        )
+    
+    @papiset_config.command(name="import")
+    async def config_import(self, ctx: commands.Context, file: discord.Attachment):
+        """Import settings from a JSON file."""
+        if not file.filename.endswith(".json"):
+            return await self.temp_message(ctx, "❌ Settings must be in a JSON file.", delete_after=3)
+            
+        data = json.loads(await file.read())
+        
+        # Don't allow import of sensitive fields
+        data.pop("api_key", None)
+        
+        await self.config.set(data)
+        
+        await self.temp_message(ctx, "✅ Successfully imported settings.\n⚠️ Remember to set your API key again.", delete_after=6)
     
     @papiset_config.group(name="embed")
     async def papiset_config_embed(self, ctx: commands.Context):
@@ -348,13 +383,13 @@ class PAPI(commands.Cog):
     
     @watch_config.command(name="enable")
     async def watch_enable(self, ctx: commands.Context):
-        """Enable watch mode (uses current mode setting)"""
+        """Enable message watch mode (uses current mode setting)"""
         current_mode = await self.config.watch_mode()
         if current_mode == "disabled":
             await self.temp_message(
                 ctx,
-                "❌ Please set watch mode first with `[p]papiset watch mode <channels|global>`",
-                delete_command_delay=1
+                "❌ Please set the watch mode first with `[p]papiset watch mode <channels|global>`",
+                delete_after=8
             )
             return
         
@@ -362,36 +397,32 @@ class PAPI(commands.Cog):
         await self.temp_message(
             ctx,
             f"✅ Watch mode enabled in `{current_mode}` mode",
-            delete_after=3,
-            delete_command_delay=1
+            delete_after=3
         )
     
     @watch_config.command(name="disable")
     async def watch_disable(self, ctx: commands.Context):
-        """Disable watch mode"""
+        """Disable message watch mode"""
         await self.config.watch_enabled.set(False)
         await self.config.watch_mode.set("disabled")
         await self.temp_message(
             ctx,
             "✅ Watch mode disabled",
-            delete_after=3,
-            delete_command_delay=1
+            delete_after=3
         )
     
     @watch_config.command(name="mode")
     async def watch_mode(self, ctx: commands.Context, mode: str):
         """Set watch mode: channels or global
         
-        - channels: Only watch specified channels
-        - global: Watch all channels bot can see
+        - channels: Watch specified channels only
+        - global: Watch all channels the bot can see
         """
         mode = mode.lower()
         if mode not in ["channels", "global"]:
             await self.temp_message(
                 ctx,
-                "❌ Invalid mode. Use `channels` or `global`",
-                delete_after=3,
-                delete_command_delay=1
+                "❌ Invalid mode. Must be `channels` or `global`"
             )
             return
         
@@ -400,9 +431,15 @@ class PAPI(commands.Cog):
         await self.temp_message(
             ctx,
             f"✅ Watch mode set to: `{mode}` (enabled)",
-            delete_after=3,
-            delete_command_delay=1
+            delete_after=3
         )
+        
+    @watch_config.command(name="strict")
+    async def watch_strict(self, ctx: commands.Context, enabled: bool):
+        """Require ||papi|| spoiler tag at the start of messages for watch mode."""
+        await self.config.watch_strict_mode.set(enabled)
+        status = "enabled" if enabled else "disabled"
+        await self.temp_message(ctx, f"✅ Strict mode {status}", delete_after=3)
     
     @watch_config.command(name="addchannel", aliases=["add"])
     async def watch_add_channel(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -412,10 +449,8 @@ class PAPI(commands.Cog):
         if channel.id in channels:
             await self.temp_message(
                 ctx,
-                f"❌ {channel.mention} is already in the watch list",
-                delete_after=2,
-                delete_command_delay=1,
-                keep_message=True
+                f"❌ {channel.mention} is already in the `channels` list",
+                delete_after=3
             )
             return
         
@@ -423,23 +458,21 @@ class PAPI(commands.Cog):
         await self.config.watch_channels.set(channels)
         await self.temp_message(
             ctx,
-            f"✅ Added {channel.mention} to watch list",
-            delete_delay=3,
-            delete_command_delay=1,
+            f"✅ Added {channel.mention} to `channels` list",
+            delete_delay=5,
             keep_message=True
         )
     
     @watch_config.command(name="removechannel", aliases=["remove", "rm"])
     async def watch_remove_channel(self, ctx: commands.Context, channel: discord.TextChannel):
-        """Remove a channel from the watch list"""
+        """Remove a channel from the `channels` list"""
         channels = await self.config.watch_channels()
         
         if channel.id not in channels:
             await self.temp_message(
                 ctx,
-                f"❌ {channel.mention} is not in the watch list",
-                delete_delay=3,
-                delete_command_delay=1
+                f"❌ {channel.mention} is not in the `channels` list",
+                delete_delay=5
             )
             return
         
@@ -447,23 +480,21 @@ class PAPI(commands.Cog):
         await self.config.watch_channels.set(channels)
         await self.temp_message(
             ctx,
-            f"✅ Removed {channel.mention} from watch list",
+            f"✅ Removed {channel.mention} from `channels` list",
             delete_after=3,
-            delete_command_delay=1,
             keep_message=True
         )
     
     @watch_config.command(name="listchannels", aliases=["list"])
     async def watch_list_channels(self, ctx: commands.Context):
-        """List all channels in the watch list"""
+        """List all channels in the `channels` list"""
         channels = await self.config.watch_channels()
         
         if not channels:
             await self.temp_message(
                 ctx,
-                "ℹ️ No channels in watch list",
-                delete_delay=3,
-                delete_command_delay=1
+                "ℹ️ No channels in `channels` list",
+                delete_delay=3
             )
             return
         
@@ -484,67 +515,66 @@ class PAPI(commands.Cog):
             ctx,
             embed=embed,
             delete_after=10,
-            delete_command_delay=1,
             keep_message=True
         )
     
     @watch_config.command(name="cooldown", aliases=["cd"])
     async def watch_cooldown(self, ctx: commands.Context, seconds: int):
-        """Set cooldown between watch parses per user (0 to disable)"""
+        """Set a cooldown between message parses per user (0 to disable)"""
         if seconds < 0:
-            await self.temp_message(ctx, "❌ Cooldown must be 0 or greater", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "❌ Cooldown must be 0 or greater", delete_after=3)
             return
         
         await self.config.watch_cooldown.set(seconds)
         if seconds == 0:
-            await self.temp_message(ctx, "✅ Watch cooldown disabled", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "✅ Watch cooldown disabled", delete_after=3)
         else:
-            await self.temp_message(ctx, f"✅ Watch cooldown set to {seconds} seconds", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, f"✅ Watch cooldown set to {seconds} seconds", delete_after=3)
     
     @watch_config.command(name="maxplaceholders", aliases=["max"])
     async def watch_max_placeholders(self, ctx: commands.Context, max_count: int):
-        """Set maximum placeholders per message (0 for no limit)"""
+        """Set the max placeholders allowed per message (0 for no limit)"""
         if max_count < 0:
-            await self.temp_message(ctx, "❌ Max must be 0 or higher", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "❌ Max must be `0` or higher", delete_after=3)
             return
         
         await self.config.watch_max_placeholders.set(max_count)
         if max_count == 0:
-            await self.temp_message(ctx, "✅ Placeholder limit disabled", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "✅ Placeholder limit disabled.", delete_after=3)
         else:
-            await self.temp_message(ctx, f"✅ Max placeholders set to `{max_count}`", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, f"✅ Max placeholders set to `{max_count}`", delete_after=3)
     
     @watch_config.command(name="replytype", aliases=["reply"])
     async def watch_reply_type(self, ctx: commands.Context, reply_type: str):
         """Set reply type: reply or thread"""
         reply_type = reply_type.lower()
         if reply_type not in ["reply", "thread"]:
-            await self.temp_message(ctx, "❌ Invalid type. Use `reply` or `thread`", delete_after=3, delete_command_delay=1)
+            await self.temp_message(ctx, "❌ Invalid type. Use `reply` or `thread`", delete_after=3)
             return
         
         await self.config.watch_reply_type.set(reply_type)
-        await self.temp_message(ctx, f"✅ Reply type set to: `{reply_type}`", delete_after=3, delete_command_delay=1)
+        await self.temp_message(ctx, f"✅ Reply type set to: `{reply_type}`", delete_after=3)
     
     @watch_config.command(name="showerrors", aliases=["errors"])
     async def watch_show_errors(self, ctx: commands.Context, enabled: bool):
         """Toggle showing errors in parsed messages (true/false)"""
         await self.config.watch_show_errors.set(enabled)
         status = "enabled" if enabled else "disabled"
-        await self.temp_message(ctx, f"✅ Error display {status}", delete_after=3, delete_command_delay=1)
+        await self.temp_message(ctx, f"✅ Error display {status}", delete_after=3)
     
     @watch_config.command(name="requireroles", aliases=["require"])
     async def watch_require_roles(self, ctx: commands.Context, enabled: bool):
         """Toggle requiring allowed_roles for watch mode (true/false)"""
         await self.config.watch_require_roles.set(enabled)
         status = "enabled" if enabled else "disabled"
-        await self.temp_message(ctx, f"✅ Role requirement: {status}", delete_after=3, delete_command_delay=1)
+        await self.temp_message(ctx, f"✅ Role requirement: `{status}`", delete_after=3)
     
     @watch_config.command(name="deletetrigger", aliases=["dt"])
     async def watch_delete_trigger(self, ctx: commands.Context, enabled: bool):
-        """Toggle deleting original message after parsing (true/false)"""
+        """Toggle deleting user message after parsing (true/false)"""
         await self.config.watch_delete_trigger.set(enabled)
         status = "enabled" if enabled else "disabled"
-        await self.temp_message(ctx, f"✅ Delete command message: {status}", delete_after=3, delete_command_delay=1)
+        await self.temp_message(ctx, f"✅ Delete command message: {status}", delete_after=3)
     
     @watch_config.command(name="settings")
     async def watch_settings(self, ctx: commands.Context):
@@ -593,7 +623,7 @@ class PAPI(commands.Cog):
             inline=False
         )
         
-        await self.temp_message(ctx, embed=embed, delete_after=15, delete_command_delay=1, keep_message=True)
+        await self.temp_message(ctx, embed=embed, delete_after=15, keep_message=True)
     
     # Slash command
     @app_commands.command(name="papi")
@@ -617,21 +647,19 @@ class PAPI(commands.Cog):
         
         try:
             settings = await self.config.all()
-            
-            # Check if API key is configured
+
             if settings["api_key"] == "change-me-please":
                 await interaction.followup.send(
-                    "❌ **Error:** API key not configured. Please contact the bot owner.",
+                    "❌ **Error:** API key has not been configured! Please contact the bot owner.",
                     ephemeral=True
                 )
                 return
             
-            # Parse placeholder via PAPIRestAPI
             result = await self._parse_placeholder_via_api(placeholder, player, settings)
             
             if result is None:
                 await interaction.followup.send(
-                    f"❌ **Error:** Failed to connect to PAPIRestAPI or your Minecraft server. Please try again later.",
+                    f"❌ **Error:** Failed to connect to PAPIRestAPI or your Minecraft server.\n\nCheck your configuration or try again later.",
                     ephemeral=True
                 )
                 return
@@ -644,22 +672,23 @@ class PAPI(commands.Cog):
                 )
                 return
             
-            # Create success embed
+            # Make success embed
             embed = await self._create_success_embed(
                 placeholder=result["placeholder"],
                 value=result["value"],
-                context=result["context"]
+                context=result["context"],
+                user=interaction.user
             )
             
             await interaction.followup.send(embed=embed)
             
             if debug:
-                log.info(f"Successfully sent PAPI response for {placeholder}:{result['value']}")
+                log.info(f"Successful PAPI response for {placeholder}:{result['value']}")
                 
         except Exception as e:
             log.error(f"Error in PAPI command: {e}", exc_info=True)
             await interaction.followup.send(
-                "❌ **Error:** An unexpected error occurred while processing the command.",
+                "❌ **Error:** An unexpected error occurred.",
                 ephemeral=True
             )
 
@@ -834,13 +863,23 @@ class PAPI(commands.Cog):
         self, 
         placeholder: str, 
         value: str, 
-        context: str
+        context: str,
+        user: discord.Member
     ) -> discord.Embed:
         """Create a success embed for PAPI results"""
         settings = await self.config.all()
+
+        thumbnail_url = self._vzge_url(
+            subject=context,
+            render="bust",
+            size=128,
+            format="png",
+            y=20
+        )
+
         
         embed = discord.Embed(
-            title="PlaceholderAPI Result",
+            title=f"PAPI Results for {user.display_name}",
             color=discord.Colour.green(),
             timestamp=datetime.utcnow()
         )
@@ -852,9 +891,8 @@ class PAPI(commands.Cog):
         embed.add_field(name="Context", value=f"""```ansi\n\u001b[0;34m{context}\u001b[0;30m\n```""", inline=True)
         embed.add_field(name="Placeholder", value=f"""```ansi\n\u001b[0;30m{placeholder}\u001b[0;30m\n```""", inline=False)
         
-        # Add player thumbnail if it's a player-specific query
         if context != "Server":
-            thumbnail_url = f"https://vzge.me/bust/128/{context}"
+            # thumbnail_url = f"https://vzge.me/bust/128/{context}"
             embed.set_thumbnail(url=thumbnail_url)
         
         # timestamp_str = datetime.now().strftime("%d/%m/%Y %I:%M%p")
@@ -864,7 +902,7 @@ class PAPI(commands.Cog):
 
     def _dedupe_placeholders(self, placeholders: list[str]) -> list[str]:
         """
-        Deduplicate placeholders case-insensitively while preserving original casing.
+        Deduplicate placeholders case-insensitively and preserve original casing.
         Example:
             ["Server:Online", "server:online"] → ["Server:Online"]
         """
@@ -881,15 +919,13 @@ class PAPI(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        """Listen for messages with placeholders and parse them"""
+        """Listener for messages with placeholder to parse"""
         if message.author.bot:
             return
         
-        # Ignore DMs (optional - remove if you want DM support)
         if not message.guild:
             return
         
-        # Ignore messages without content
         if not message.content:
             return
         
@@ -897,6 +933,17 @@ class PAPI(commands.Cog):
         debug = settings["debug"]
         
         should_process, reason = await self._should_process_watch(message, settings)
+
+        if settings["watch_strict_mode"]:
+            # Must start with a spoiler tag containing "papi"
+            if not message.content.startswith("||papi||"):
+                return
+
+            # Remove the trigger from the content before parsing
+            content = message.content[len("||papi||"):].lstrip()
+        else:
+            content = message.content
+
         
         if not should_process:
             if debug and reason != "Watch mode disabled":
@@ -913,7 +960,7 @@ class PAPI(commands.Cog):
         unique_placeholders = self._dedupe_placeholders(matches)
         # unique_placeholders = list(dict.fromkeys(matches))
         
-        # Enforce max placeholder early
+        # Enforce max placeholder early on
         max_ph = settings["watch_max_placeholders"]
         if max_ph > 0 and len(unique_placeholders) > max_ph:
             if settings["watch_show_errors"]:
@@ -928,7 +975,7 @@ class PAPI(commands.Cog):
             log.info(f"Processing watch message from {message.author} in #{message.channel.name}")
         
         try:
-            result = await self._parse_message_placeholders(message.content, settings)
+            result = await self._parse_message_placeholders(content, settings) # message.content
             
             if "error" in result:
                 error_msg = f"❌ {result['error']}"
@@ -956,7 +1003,7 @@ class PAPI(commands.Cog):
             embed.set_footer(text=footer_text)
             
             if result['errors'] and settings["watch_show_errors"]:
-                error_text = "\n".join(result['errors'][:5])  # Limit to 5 errors
+                error_text = "\n".join(result['errors'][:5])  # Show up to 5 errors
                 if len(result['errors']) > 5:
                     error_text += f"\n*...and {len(result['errors']) - 5} more*"
                 embed.add_field(name="Errors", value=error_text, inline=False)
@@ -1013,7 +1060,7 @@ class PAPI(commands.Cog):
     #     return placeholders
     
     async def _check_watch_cooldown(self, user_id: int, cooldown: int) -> bool:
-        """Check if user is on cooldown. Boolean result."""
+        """Check if user is on cooldown. Returns a boolean."""
         if cooldown <= 0:
             return True
         
@@ -1082,7 +1129,7 @@ class PAPI(commands.Cog):
                     # Replace with error indicator
                     parsed_content = parsed_content.replace(full_match, f"❌ *({error_msg})*")
                 else:
-                    # Leave the original placeholder
+                    # original placeholder
                     pass
                 
                 errors.append(f"`{full_match}`: {error_msg}")
@@ -1139,19 +1186,65 @@ class PAPI(commands.Cog):
             return (False, "User on cooldown")
         
         return (True, "OK")
+    
+    @property
+    def vzge_headers(self):
+        return {
+            "User-Agent": (
+                f"Red-PAPICog/{ver}"
+                "(+https://github.com/srcsm/rpd; jayms@duck.com)"
+            )
+        }
+    
+    def _vzge_url(
+        self,
+        subject: str,
+        render: str = "bust",
+        size: int = 128,
+        *,
+        format: str | None = None, # jxl, webp, png
+        no: list[str] | None = None, # ["shadow", "cape", "ears", "helmet", "overlay"]
+        y: int | None = None,
+        p: int | None = None,
+        r: int | None = None, # roll
+        model: str | None = None # slim/wide
+    ) -> str:
+        """
+        Build a VZGE URL with optional parameters.
+        Example:
+            self._vzge_url("unascribed", render="bust", size=256, format="png")
+        """
+        
+        base = f"https://vzge.me/{render}/{size}/{subject}"
+        
+        # Add format extension
+        if format:
+            base += f".{format}"
+            
+        params = []
+        
+        # Disable features
+        if no:
+            params.append("no=" + ",".join(no))
+            
+        # Angles
+        if y is not None:
+            params.append(f"y={y}")
+        if p is not None:
+            params.append(f"p={p}")
+        if r is not None:
+            params.append(f"r={r}")
+            
+        if model in ("slim", "wide"):
+            params.append(model)
+            
+        if params:
+            base += "?" + "&".join(params)
+            
+        return base
 
 
 async def setup(bot: Red) -> None:
     """Load the PAPI cog"""
     cog = PAPI(bot)
     await bot.add_cog(cog)
-
-
-
-
-
-
-
-
-
-
