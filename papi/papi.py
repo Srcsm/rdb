@@ -85,28 +85,28 @@ class PAPI(commands.Cog):
         pass
     
     @papiset.command(name="settings", aliases=["info"])
-        async def show_settings(self, ctx: commands.Context):
-            """Show current PAPI settings"""
-            settings = await self.config.all()
-            
-            embed = discord.Embed(
-                title="🔧 PAPI Settings",
-                color=await ctx.embed_color(),
-                timestamp=datetime.utcnow()
-            )
-            
-            embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
-            embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
-            embed.add_field(name="API URL", value=settings["api_url"], inline=False)
-            embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Defaults detected! _(change this!)_", inline=False)
-            embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
-            
-            await self.temp_message(
-                ctx,
-                embed=embed,
-                delete_after=10,
-                keep_message=True
-            )
+    async def show_settings(self, ctx: commands.Context):
+        """Show current PAPI settings"""
+        settings = await self.config.all()
+        
+        embed = discord.Embed(
+            title="🔧 PAPI Settings",
+            color=await ctx.embed_color(),
+            timestamp=datetime.utcnow()
+        )
+        
+        embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
+        embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
+        embed.add_field(name="API URL", value=settings["api_url"], inline=False)
+        embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "change-me-please" else "⚠️ Defaults detected! _(change this!)_", inline=False)
+        embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
+        
+        await self.temp_message(
+            ctx,
+            embed=embed,
+            delete_after=10,
+            keep_message=True
+        )
     
     @papiset.group(name="config")
     async def papiset_config(self, ctx: commands.Context):
