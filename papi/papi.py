@@ -13,7 +13,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-ver = "1.1.8"
+ver = "1.2.0"
 log = logging.getLogger("red.papi")
 
 def default_time():
