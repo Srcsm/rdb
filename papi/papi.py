@@ -63,8 +63,7 @@ class PAPI(commands.Cog):
     
     async def cog_load(self):
         """Called when the cog loads"""
-        log.info("="*50)
-        log.info(f"┏━┓┏━┓┏━┓╻   ┏━╸┏━┓┏━╸\n┣━┛┣━┫┣━┛┃   ┃  ┃ ┃┃╺┓  v{ver}\n╹  ╹ ╹╹  ╹   ┗━╸┗━┛┗━┛")
+        log.info(f"==============================\n┏━┓┏━┓┏━┓╻   ┏━╸┏━┓┏━╸\n┣━┛┣━┫┣━┛┃   ┃  ┃ ┃┃╺┓  v{ver}\n╹  ╹ ╹╹  ╹   ┗━╸┗━┛┗━┛")
 
         self.session = aiohttp.ClientSession()
         
@@ -89,8 +88,14 @@ class PAPI(commands.Cog):
 
         # Log a 3-column table of current settings
         lines = format_settings(settings, groups, columns=3)
-        for line in lines:
-            log.info(line)
+        block = "\n".join(lines)
+        log.info(
+            "========== CURRENT SETTINGS ==========\n"
+            f"{block}\n"
+        )
+
+        # for line in lines:
+        #     log.info(line)
     
     async def cog_unload(self):
         """Called when the cog is unloaded"""
