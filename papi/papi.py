@@ -13,11 +13,11 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper
+from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper, format_settings, groups
 from .watch import WatchListener
 
-ver = "1.2.0"
-log = logging.getLogger("red.papi")
+ver = "1.2.1"
+log = logging.getLogger("PAPI")
 
 def default_time():
     return datetime.min
@@ -63,24 +63,41 @@ class PAPI(commands.Cog):
     
     async def cog_load(self):
         """Called when the cog loads"""
+        log.info("="*50)
+        log.info(f"┏━┓┏━┓┏━┓╻   ┏━╸┏━┓┏━╸\n┣━┛┣━┫┣━┛┃   ┃  ┃ ┃┃╺┓  v{ver}\n╹  ╹ ╹╹  ╹   ┗━╸┗━┛┗━┛")
+
         self.session = aiohttp.ClientSession()
+        
         self.api_helper = APIHelper(self.session, self.config, ver)
+        try:
+            pass = await self.api_helper.test_connection()
+            if pass:
+                log.info("PAPIRestAPI connection successful!")
+            else:
+                log.warning("PAPIRestAPI connection failed.")
+        except Exception as e:
+            log.error(f"PAPIRestAPI connection error: {e}")
         self.embed_helper = EmbedHelper(self.api_helper)
         settings = await self.config.all()
+        
         if settings["debug"]:
             log.info("PAPI Debug mode enabled.")
-        
-        # Warn if using default API key
         if settings["api_key"] == "SECRET-KEY":
-            log.warning("="*50)
             log.warning("WARNING: You are using the default API key!")
-            log.warning("Please set it with: [p]papiset apikey <your-key>")
-            log.warning("="*50)
+            log.warning("Please set it with: [p]papiset apikey <api-key>")
+            # log.warning("="*50)
+
+        # Log a 3-column table of current settings
+        lines = format_settings(settings, groups, columns=3)
+        for line in lines:
+            log.info(line)
     
     async def cog_unload(self):
         """Called when the cog is unloaded"""
         if self.session:
             await self.session.close()
+        
+        log.info("PAPI cog unloaded.")
     
     def format_help_for_context(self, ctx: commands.Context) -> str:
         """Show version in help"""
