@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
+from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper
+from .watch import WatchListener
+
 if TYPE_CHECKING:
     from ..papi import PAPI
 
@@ -43,12 +46,12 @@ class WatchListener:
             return True
         
         now = datetime.utcnow()
-        last_use = self.watch_cooldowns[user_id]
+        last_use = self.cooldowns[user_id]
         
         if now - last_use < timedelta(seconds=cooldown):
             return False
         
-        self.watch_cooldowns[user_id] = now
+        self.cooldowns[user_id] = now
         return True
     
     async def parse_message_placeholders(self, message_content: str, settings: dict) -> dict:
@@ -159,7 +162,7 @@ class WatchListener:
                     return (False, "Missing required role")
         
         cooldown = settings["watch_cooldown"]
-        if not await self.watch_cooldown(message.author.id, cooldown):
+        if not await self.check_cooldown(message.author.id, cooldown):
             return (False, "User on cooldown")
         
         return (True, "OK")

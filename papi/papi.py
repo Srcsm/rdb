@@ -683,7 +683,8 @@ class PAPI(commands.Cog):
                 placeholder=result["placeholder"],
                 value=result["value"],
                 context=result["context"],
-                user=interaction.user
+                user=interaction.user,
+                settings=settings
             )
             
             await interaction.followup.send(embed=embed)

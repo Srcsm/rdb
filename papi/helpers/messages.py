@@ -2,6 +2,7 @@ import discord
 import asyncio
 import logging
 from typing import Optional
+from redbot.core import commands
 
 log = logging.getLogger("red.papi.helpers.messages")
 
@@ -41,10 +42,10 @@ class MessageHelper:
             delete_after=delete_after if delete_after > 0 and not keep_message else None)
         
         if delete_command:
-            asyncio.create_task(self._delete_command_message(ctx, delete_command_delay))
+            asyncio.create_task(self.delete_command_message(ctx, delete_command_delay))
 
         if keep_message and delete_after > 0:
-            asyncio.create_task(self._handle_keep_reaction(ctx, msg, delete_after))
+            asyncio.create_task(self.handle_keep_reaction(ctx, msg, delete_after))
         
         return msg
     
