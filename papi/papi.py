@@ -143,6 +143,7 @@ class PAPI(commands.Cog):
     @papiset.group(name="config")
     async def papiset_config(self, ctx: commands.Context):
         """Commands to configure PAPI settings"""
+        await self.message_helper.delete_command_message(ctx)
         pass
     
     @papiset_config.command(name="allowedroles", aliases=["ar"])
@@ -223,6 +224,7 @@ class PAPI(commands.Cog):
     @papiset_config.group(name="embed")
     async def papiset_config_embed(self, ctx: commands.Context):
         """Configure various embed settings"""
+        await self.message_helper.delete_command_message(ctx)
         pass
     
     @papiset_config_embed.command(name="contexttitle", aliases=["ct"])
@@ -308,6 +310,7 @@ class PAPI(commands.Cog):
     @papiset_config.group(name="api")
     async def papiset_config_api(self, ctx: commands.Context):
         """Configure API connection settings"""
+        await self.message_helper.delete_command_message(ctx)
         pass
     
     @papiset_config_api.command(name="apikey")
@@ -393,6 +396,7 @@ class PAPI(commands.Cog):
     @papiset.group(name="watch")
     async def watch_config(self, ctx: commands.Context):
         """Configure the placeholder watch feature"""
+        await self.message_helper.delete_command_message(ctx)
         pass
     
     @watch_config.command(name="enable")
