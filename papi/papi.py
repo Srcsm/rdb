@@ -70,8 +70,8 @@ class PAPI(commands.Cog):
         
         self.api_helper = APIHelper(self.session, self.config, ver)
         try:
-            pass = await self.api_helper.test_connection()
-            if pass:
+            connected = await self.api_helper.test_connection()
+            if connected:
                 log.info("PAPIRestAPI connection successful!")
             else:
                 log.warning("PAPIRestAPI connection failed.")
