@@ -16,7 +16,7 @@ from redbot.core.utils.chat_formatting import box
 from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper, format_settings, groups
 from .watch import WatchListener
 
-ver = "1.2.1"
+ver = "1.2.2"
 log = logging.getLogger("PAPI")
 
 def default_time():
@@ -114,6 +114,7 @@ class PAPI(commands.Cog):
     @commands.is_owner()
     async def papiset(self, ctx: commands.Context):
         """Base PAPI cog command"""
+        await self.message_helper.delete_command_message(ctx)
         pass
     
     @papiset.command(name="settings", aliases=["info"])
