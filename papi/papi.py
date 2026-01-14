@@ -65,27 +65,7 @@ class PAPI(commands.Cog):
         """Called when the cog loads"""
         log.info(f"==============================\n┏━┓┏━┓┏━┓╻   ┏━╸┏━┓┏━╸\n┣━┛┣━┫┣━┛┃   ┃  ┃ ┃┃╺┓  v{ver}\n╹  ╹ ╹╹  ╹   ┗━╸┗━┛┗━┛")
 
-        self.session = aiohttp.ClientSession()
-        
-        self.api_helper = APIHelper(self.session, self.config, ver)
-        try:
-            connected = await self.api_helper.test_connection()
-            if connected:
-                log.info("PAPIRestAPI connection successful!")
-            else:
-                log.warning("PAPIRestAPI connection failed.")
-        except Exception as e:
-            log.error(f"PAPIRestAPI connection error: {e}")
-        self.embed_helper = EmbedHelper(self.api_helper)
         settings = await self.config.all()
-        
-        if settings["debug"]:
-            log.info("PAPI Debug mode enabled.")
-        if settings["api_key"] == "SECRET-KEY":
-            log.warning("WARNING: You are using the default API key!")
-            log.warning("Please set it with: [p]papiset apikey <api-key>")
-            # log.warning("="*50)
-
         # Log a 3-column table of current settings
         lines = format_settings(settings, groups, columns=3)
         block = "\n".join(lines)
@@ -93,9 +73,27 @@ class PAPI(commands.Cog):
             "========== CURRENT SETTINGS ==========\n"
             f"{block}\n"
         )
-
         # for line in lines:
         #     log.info(line)
+
+        self.session = aiohttp.ClientSession()
+        self.api_helper = APIHelper(self.session, self.config, ver)
+        try:
+            connected = await self.test_connection()
+            if connected:
+                log.info("PAPIRestAPI connection successful!")
+            else:
+                log.warning("PAPIRestAPI connection failed.")
+        except Exception as e:
+            log.error(f"PAPIRestAPI connection error: {e}")
+        self.embed_helper = EmbedHelper(self.api_helper)
+        
+        if settings["debug"]:
+            log.info("PAPI Debug mode enabled.")
+        if settings["api_key"] == "SECRET-KEY":
+            log.warning("WARNING: You are using the default API key!")
+            log.warning("Please set it with: [p]papiset apikey <api-key>")
+            # log.warning("="*50)
     
     async def cog_unload(self):
         """Called when the cog is unloaded"""
