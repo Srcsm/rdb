@@ -9,6 +9,25 @@ class APIHelper:
         self.session = session
         self.config = config
         self.ver = version
+
+    async def test_connection(self):
+        """Return (ok: bool, data: dict | None)"""
+        settings = await self.config.all()
+        api_url = settings["api_url"]
+
+        try:
+            async with self.session.get(
+                f"{api_url}/api/health",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as resp:
+                if resp.status != 200:
+                    return False, None
+
+                data = await resp.json()
+                return True, data
+
+        except Exception:
+            return False, None
     
     async def parse_placeholder_via_api(self, placeholder: str, player: Optional[str], settings: dict) -> Optional[dict]:
         """Query PAPIRestAPI to parse a placeholder"""

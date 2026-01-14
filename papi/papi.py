@@ -79,7 +79,7 @@ class PAPI(commands.Cog):
         self.session = aiohttp.ClientSession()
         self.api_helper = APIHelper(self.session, self.config, ver)
         try:
-            connected = await self.test_connection()
+            connected, _ = await self.api_helper.test_connection()
             if connected:
                 log.info("PAPIRestAPI connection successful!")
             else:
@@ -356,55 +356,35 @@ class PAPI(commands.Cog):
     async def test_connection(self, ctx: commands.Context):
         """Test the connection to PAPIRestAPI"""
         async with ctx.typing():
-            settings = await self.config.all()
-            api_url = settings["api_url"]
-            
-            try:
-                async with self.session.get(
-                    f"{api_url}/api/health",
-                    timeout=aiohttp.ClientTimeout(total=5)
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        embed = discord.Embed(
-                            title="✅ Connection Successful",
-                            color=discord.Color.green(),
-                            timestamp=datetime.utcnow()
-                        )
-                        embed.add_field(name="Status", value=data.get("status", "Unknown"), inline=True)
-                        embed.add_field(name="Plugin", value=data.get("plugin", "Unknown"), inline=True)
-                        embed.add_field(name="Version", value=data.get("version", "Unknown"), inline=True)
-                        embed.add_field(name="Minecraft Version", value=data.get("minecraft_version", "Unknown"), inline=False)
-                        embed.add_field(name="API URL", value=api_url, inline=False)
-                        await self.message_helper.temp_message(
-                            ctx,
-                            embed=embed,
-                            delete_after=10,
-                            delete_command=True,
-                            keep_message=True
-                        )
-                    else:
-                        await self.message_helper.temp_message(
-                            ctx,
-                            f"❌ Connection failed! Status code: {resp.status}",
-                            delete_after=3
-                        )
-            except aiohttp.ClientError as e:
+            connected, data = await self.api_helper.test_connection()
+
+            if connected and data:
+                embed = discord.Embed(
+                    title="✅ Connection Successful",
+                    color=discord.Color.green(),
+                    timestamp=datetime.utcnow()
+                )
+                embed.add_field(name="Status", value=data.get("status", "Unknown"), inline=True)
+                embed.add_field(name="Plugin", value=data.get("plugin", "Unknown"), inline=True)
+                embed.add_field(name="Version", value=data.get("version", "Unknown"), inline=True)
+                embed.add_field(name="Minecraft Version", value=data.get("minecraft_version", "Unknown"), inline=False)
+
+                settings = await self.config.all()
+                embed.add_field(name="API URL", value=settings["api_url"], inline=False)
+
                 await self.message_helper.temp_message(
                     ctx,
-                    f"❌ Connection failed: {str(e)}\n\nEnsure your server is running and the API URL is correct.",
-                    delete_after=3
+                    embed=embed,
+                    delete_after=10,
+                    delete_command=True,
+                    keep_message=True
                 )
-            except Exception as e:
-                log.error(f"Error testing connection: {e}", exc_info=True)
+            else:
                 await self.message_helper.temp_message(
                     ctx,
-                    f"❌ Unexpected error: {str(e)}",
-                    delete_after=8,
-                    delete_command=True
+                    "❌ Connection failed!\n\nEnsure your server is running and the API URL is correct.",
+                    delete_after=5
                 )
-    
-    
     
     @papiset.group(name="watch")
     async def watch_config(self, ctx: commands.Context):
