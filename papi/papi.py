@@ -79,13 +79,17 @@ class PAPI(commands.Cog):
         self.session = aiohttp.ClientSession()
         self.api_helper = APIHelper(self.session, self.config, ver)
         try:
-            connected, _ = await self.api_helper.test_connection()
-            if connected:
-                log.info("PAPIRestAPI connection successful!")
+            connected, data = await self.api_helper.test_connection()
+            status = "CONNECTED" if connected else "FAILED"
+            if connected and data:
+                log.info(f"PAPIRestAPI connection {status}!")
+                log.info(f"Plugin: {data.get('plugin')}, Version: {data.get('version')}")
             else:
-                log.warning("PAPIRestAPI connection failed.")
+                log.info(f"PAPIRestAPI connection {status}!")
+                log.warning("Please verify your API key and URL are properly set.")
         except Exception as e:
             log.error(f"PAPIRestAPI connection error: {e}")
+
         self.embed_helper = EmbedHelper(self.api_helper)
         
         if settings["debug"]:
