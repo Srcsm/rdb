@@ -115,7 +115,7 @@ class PAPI(commands.Cog):
     
     @commands.group()
     @commands.is_owner()
-    async def papiset(self, ctx: commands.Context, aliases=["ps"]):
+    async def papiset(self, ctx: commands.Context):
         """Base PAPI cog command"""
         await self.message_helper.delete_command_message(ctx)
         pass
