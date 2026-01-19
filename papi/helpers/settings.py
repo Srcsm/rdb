@@ -60,7 +60,7 @@ class SettingsFormatter:
 
                 wrapped = self._wrap_value(str(value), wrap)
                 formatted_key = self._format_key(key, group_name)
-                thumbnail = await self.config.footer_icon()
+                thumbnail = settings["footer_icon"]
 
                 embed.add_field(
                     name=formatted_key,
