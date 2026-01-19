@@ -73,6 +73,7 @@ class PAPI(commands.Cog):
             log.info(
                 "========== CURRENT SETTINGS ==========\n"
                 f"{block}"
+            )
 
         self.session = aiohttp.ClientSession()
         self.api_helper = APIHelper(self.session, self.config, ver)
