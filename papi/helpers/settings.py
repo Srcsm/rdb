@@ -49,7 +49,7 @@ class SettingsFormatter:
         for group_name, keys in self.groups.items():
             embed.add_field(
                 name="\u200b",
-                value=f"### __{group_name}__",
+                value=f"__**{group_name}:**__",
                 inline=False
             )
 
@@ -59,13 +59,20 @@ class SettingsFormatter:
                     value = str(value)
 
                 wrapped = self._wrap_value(str(value), wrap)
+                formatted_key = self._format_key(key)
 
                 embed.add_field(
-                    name=key,
+                    name=formatted_key,
                     value=f"`{wrapped}`" or "`None`",
                     inline=True
                 )
         return embed
+
+    def _format_key(self, key: str, group_name: str) -> str:
+        prefix = group_name.split()[0].lower()
+        if key.startswith(prefix + "_"):
+            key = key[len(prefix) + 1:]
+        return key.replace("_", " ").title()
 
     def _wrap_value(self, text: str, width: int) -> str:
         if len(text) <= width:

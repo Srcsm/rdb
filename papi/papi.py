@@ -67,17 +67,12 @@ class PAPI(commands.Cog):
         log.info(f"==============================\n┏━┓┏━┓┏━┓╻   ┏━╸┏━┓┏━╸\n┣━┛┣━┫┣━┛┃   ┃  ┃ ┃┃╺┓  v{ver}\n╹  ╹ ╹╹  ╹   ┗━╸┗━┛┗━┛")
 
         settings = await self.config.all()
-        # Log a 3-column table of current settings
-        lines = self.settings_formatter.format_console(settings)
-        block = "\n".join(lines)
-        # lines = format_settings(settings, groups, columns=3)
-        # block = "\n".join(lines)
-        log.info(
-            "========== CURRENT SETTINGS ==========\n"
-            f"{block}"
-        )
-        # for line in lines:
-        #     log.info(line)
+        if settings["debug"]:
+            lines = self.settings_formatter.format_console(settings)
+            block = "\n".join(lines)
+            log.info(
+                "========== CURRENT SETTINGS ==========\n"
+                f"{block}"
 
         self.session = aiohttp.ClientSession()
         self.api_helper = APIHelper(self.session, self.config, ver)
