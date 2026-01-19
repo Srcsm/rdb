@@ -59,7 +59,7 @@ class SettingsFormatter:
                     value = str(value)
 
                 wrapped = self._wrap_value(str(value), wrap)
-                formatted_key = self._format_key(key)
+                formatted_key = self._format_key(key, group_name)
 
                 embed.add_field(
                     name=formatted_key,
