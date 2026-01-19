@@ -122,6 +122,7 @@ class PAPI(commands.Cog):
     
     @papiset.command(name="settings")
     async def papiset_settings(self, ctx: commands.Context):
+        """Show current settings for the PAPI cog"""
         settings = await self.config.all()
 
         embed = self.settings_formatter.build_embed(
@@ -136,6 +137,8 @@ class PAPI(commands.Cog):
             delete_command=True,
             keep_message=True
         )
+
+        print(embed)
 
     # @papiset.command(name="settings", aliases=["info"])
     # async def show_settings(self, ctx: commands.Context):
