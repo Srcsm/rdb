@@ -120,10 +120,12 @@ class PAPI(commands.Cog):
     async def papiset_settings(self, ctx: commands.Context):
         """Show current settings for the PAPI cog"""
         settings = await self.config.all()
+        thumbnail = settings["footer_icon"]
 
         embed = self.settings_formatter.build_embed(
             settings,
-            title="Current Settings"
+            title="Current Settings",
+            thumbnail=thumbnail
         )
 
         await self.message_helper.temp_message(

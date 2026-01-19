@@ -40,7 +40,7 @@ class SettingsFormatter:
         return lines
 
     # Embed friendly table of current settings
-    def build_embed(self, settings: dict, title: str | None, wrap: int = 40) -> discord.Embed:
+    def build_embed(self, settings: dict, title: str | None, thumbnail: str | None = None, wrap: int = 40) -> discord.Embed:
         embed = discord.Embed(
             description=f"## {title}\n" if title else "",
             color=discord.Color.blurple()
@@ -60,12 +60,14 @@ class SettingsFormatter:
 
                 wrapped = self._wrap_value(str(value), wrap)
                 formatted_key = self._format_key(key, group_name)
+                thumbnail = await self.config.footer_icon()
 
                 embed.add_field(
                     name=formatted_key,
                     value=f"`{wrapped}`" or "`None`",
                     inline=True
                 )
+                embed.set_thumbnail(url=thumbnail)
         return embed
 
     def _format_key(self, key: str, group_name: str) -> str:
