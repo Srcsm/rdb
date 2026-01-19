@@ -13,7 +13,7 @@ from redbot.core import commands, Config, app_commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
-from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper, format_settings, groups
+from .helpers import APIHelper, EmbedHelper, MessageHelper, RoleHelper, SettingsFormatter, SETTINGS_TABLE
 from .watch import WatchListener
 
 ver = "1.2.2"
@@ -34,6 +34,7 @@ class PAPI(commands.Cog):
         self.message_helper = MessageHelper(self.config)
         self.role_helper = RoleHelper()
         self.watch_listener = WatchListener(self)
+        self.settings_formatter = SettingsFormatter(SETTINGS_TABLE)
         
         # Default settings
         default_global = {
@@ -67,11 +68,13 @@ class PAPI(commands.Cog):
 
         settings = await self.config.all()
         # Log a 3-column table of current settings
-        lines = format_settings(settings, groups, columns=3)
+        lines = self.settings_formatter.format_console(settings)
         block = "\n".join(lines)
+        # lines = format_settings(settings, groups, columns=3)
+        # block = "\n".join(lines)
         log.info(
             "========== CURRENT SETTINGS ==========\n"
-            f"{block}\n"
+            f"{block}"
         )
         # for line in lines:
         #     log.info(line)
@@ -112,34 +115,51 @@ class PAPI(commands.Cog):
     
     @commands.group()
     @commands.is_owner()
-    async def papiset(self, ctx: commands.Context):
+    async def papiset(self, ctx: commands.Context, aliases=["ps"]):
         """Base PAPI cog command"""
         await self.message_helper.delete_command_message(ctx)
         pass
     
-    @papiset.command(name="settings", aliases=["info"])
-    async def show_settings(self, ctx: commands.Context):
-        """Show current PAPI cog settings"""
+    @papiset.command(name="settings")
+    async def papiset_settings(self, ctx: commands.Context):
         settings = await self.config.all()
-        
-        embed = discord.Embed(
-            title="🔧 PAPI Settings",
-            color=await ctx.embed_color(),
-            timestamp=datetime.utcnow()
+
+        embed = self.settings_formatter.build_embed(
+            settings,
+            title="Current Settings"
         )
-        
-        embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
-        embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
-        embed.add_field(name="API URL", value=settings["api_url"], inline=False)
-        embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "SECRET-KEY" else "⚠️ _**Missing API key!**_", inline=False)
-        embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
-        
+
         await self.message_helper.temp_message(
             ctx,
             embed=embed,
             delete_after=15,
+            delete_command=True,
             keep_message=True
         )
+
+    # @papiset.command(name="settings", aliases=["info"])
+    # async def show_settings(self, ctx: commands.Context):
+    #     """Show current PAPI cog settings"""
+    #     settings = await self.config.all()
+        
+    #     embed = discord.Embed(
+    #         title="🔧 PAPI Settings",
+    #         color=await ctx.embed_color(),
+    #         timestamp=datetime.utcnow()
+    #     )
+        
+    #     embed.add_field(name="Footer Name", value=settings["footer_name"], inline=False)
+    #     embed.add_field(name="Footer Icon", value=settings["footer_icon"], inline=False)
+    #     embed.add_field(name="API URL", value=settings["api_url"], inline=False)
+    #     embed.add_field(name="API Key", value="✅ Set" if settings["api_key"] != "SECRET-KEY" else "⚠️ _**Missing API key!**_", inline=False)
+    #     embed.add_field(name="Debug Mode", value="✅ Enabled" if settings["debug"] else "❌ Disabled", inline=False)
+        
+    #     await self.message_helper.temp_message(
+    #         ctx,
+    #         embed=embed,
+    #         delete_after=15,
+    #         keep_message=True
+    #     )
     
     @papiset.group(name="config")
     async def papiset_config(self, ctx: commands.Context):

@@ -1,46 +1,84 @@
-def format_settings(settings: dict, groups: dict, columns: int = 3) -> list[str]:
-    lines = []
-    for group_name, keys in groups.items():
-        lines.append(f"--- {group_name} ---")
+class SettingsFormatter:
+    def __init__(self, groups: dict, columns: int = 3):
+        self.groups = groups
+        self.columns = columns
 
-        # Make key: value pairs
-        items = [f"{k}: {settings.get(k)}" for k in keys]
+    # Console friendly table of current settings
+    def format_console(self, settings: dict) -> list[str]:
+        lines = []
 
-        # Determine rows
-        rows = (len(items) + columns - 1) // columns
+        for group_name, keys in self.groups.items():
+            lines.append(f"--- {group_name} ---")
+            items = [f"{k}: {settings.get(k)}" for k in keys]
+            rows = (len(items) + self.columns - 1) // self.columns
 
-        # Make table
-        table = []
-        for r in range(rows):
-            row = []
-            for c in range(columns):
-                idx = r + c * rows
-                if idx < len(items):
-                    row.append(items[idx])
-            table.append(row)
-            
-        # Get column widths
-        col_widths = []
-        for c in range(columns):
-            col_items = [table[r][c] for r in range(rows) if c < len(table[r])]
-            if col_items:
-                col_widths.append(max(len(item) for item in col_items))
-            else:
-                col_widths.append(0)
+            table = []
+            for r in range(rows):
+                row = []
+                for c in range(self.columns):
+                    idx = r + c * rows
+                    if idx < len(items):
+                        row.append(items[idx])
+                table.append(row)
 
-        # Format aligned rows
-        for row in table:
-            padded = [
-                item.ljust(col_widths[i])
-                for i, item in enumerate(row)
-            ]
-            lines.append("   ".join(padded))
+            col_widths = []
+            for c in range(self.columns):
+                col_items = [table[r][c] for r in range(rows) if c < len(table[r])]
+                col_widths.append(max(len(item) for item in col_items) if col_items else 0)
 
-        lines.append("")  # blank line between groups
+            for row in table:
+                padded = [
+                    item.ljust(col_widths[i])
+                    for i, item in enumerate(row)
+                ]
+                lines.append("   ".join(padded))
 
-    return lines
+            lines.append("")
 
-groups = {
+        return lines
+
+    # Embed friendly table of current settings
+    def build_embed(self, settings: dict, title: str, wrap: int = 40) -> discord.Embed:
+        embed = discord.Embed(
+            title=title,
+            color=discord.Color.blurple()
+        )
+
+        for group_name, keys in self.groups.items():
+            embed.add_field(
+                name=f"__{group_name}__",
+                value="\u200b",
+                inline=False
+            )
+
+            for key in keys:
+                value = settings.get(key)
+                if isinstance(value, (list, dict)):
+                    value = str(value)
+
+                wrapped = self._wrap_value(str(value), wrap)
+
+                embed.add_field(
+                    name=key,
+                    value=wrapped or "None",
+                    inline=True
+                )
+        return embed
+
+    def _wrap_value(self, text: str, width: int) -> str:
+        if len(text) <= width:
+            return text
+
+        parts = []
+        while len(text) > width:
+            parts.append(text[:width])
+            text = text[width:]
+        parts.append(text)
+        return "\n".join(parts)
+
+
+
+SETTINGS_TABLE = {
     "Core Settings": [
         "api_url", "allowed_roles", "debug"
     ],
