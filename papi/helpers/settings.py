@@ -48,8 +48,8 @@ class SettingsFormatter:
 
         for group_name, keys in self.groups.items():
             embed.add_field(
-                name=f"__{group_name}__",
-                value="\u200b",
+                name="\u200b",
+                value=f"### __{group_name}__",
                 inline=False
             )
 
