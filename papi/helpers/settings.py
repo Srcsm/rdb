@@ -40,9 +40,9 @@ class SettingsFormatter:
         return lines
 
     # Embed friendly table of current settings
-    def build_embed(self, settings: dict, title: str, wrap: int = 40) -> discord.Embed:
+    def build_embed(self, settings: dict, title: str | None, wrap: int = 40) -> discord.Embed:
         embed = discord.Embed(
-            title=title,
+            description=f"## {title}\n" if title else "",
             color=discord.Color.blurple()
         )
 
@@ -62,7 +62,7 @@ class SettingsFormatter:
 
                 embed.add_field(
                     name=key,
-                    value=wrapped or "None",
+                    value=f"`{wrapped}`" or "`None`",
                     inline=True
                 )
         return embed
@@ -82,16 +82,17 @@ class SettingsFormatter:
 
 SETTINGS_TABLE = {
     "Core Settings": [
-        "api_url", "allowed_roles", "debug"
+        "debug", "api_url",
+        "allowed_roles"
     ],
     "Embed Settings": [
-        "footer_name", "footer_icon",
-        "embed_value_title", "embed_context_title", "embed_placeholder_title"
+        "embed_placeholder_title", "embed_context_title", "embed_value_title",
+        "footer_name", "footer_icon"
     ],
     "Watch Settings": [
         "watch_enabled", "watch_mode", "watch_strict_mode",
-        "watch_channels", "watch_cooldown", "watch_max_placeholders",
-        "watch_reply_type", "watch_show_errors",
-        "watch_require_roles", "watch_delete_trigger"
+        "watch_cooldown", "watch_reply_type", "watch_max_placeholders",
+        "watch_require_roles", "watch_delete_trigger", "watch_show_errors",
+        "watch_channels"
     ]
 }

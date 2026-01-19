@@ -116,7 +116,7 @@ class PAPI(commands.Cog):
     @commands.group()
     @commands.is_owner()
     async def papiset(self, ctx: commands.Context):
-        """Base PAPI cog command"""
+        """Base command for viewing and configuring settings"""
         await self.message_helper.delete_command_message(ctx)
         pass
     
@@ -137,8 +137,6 @@ class PAPI(commands.Cog):
             delete_command=True,
             keep_message=True
         )
-
-        print(embed)
 
     # @papiset.command(name="settings", aliases=["info"])
     # async def show_settings(self, ctx: commands.Context):
