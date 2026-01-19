@@ -1,3 +1,5 @@
+import discord
+
 class SettingsFormatter:
     def __init__(self, groups: dict, columns: int = 3):
         self.groups = groups
